@@ -35,17 +35,12 @@
 // ───────────────────────────────────────────────────────────
 // TODO 任務一：JWT 守門員（verifyToken）
 // ───────────────────────────────────────────────────────────
-// Input:  req.headers.authorization（格式：'Bearer <token>'）
-// Output: 驗過 → req.user + next() / 401 沒帶或格式錯 / 401 驗失敗
-//
-// 提示：
-// 1. 從 req.headers.authorization 讀取 header
-// 2. header 沒帶 或 格式不是 'Bearer <token>' → return 401（訊息：請先登入）
-// 3. 從 header 中取出 token 的部分
-// 4. 用 jwt.verify 搭配環境變數中的 secret 驗 token
-// 5. 驗過 → 將 decoded 資料掛到 req.user，再呼叫 next()
-// - jwt.verify 失敗會 throw，用 try/catch 接，catch 裡回 401（訊息：Token 無效或已過期）
-// - ⚠️ 錯誤回應記得 return
+
+// - 輸入：req.headers.authorization（格式：'Bearer <token>'）
+// - Authorization 格式驗證：沒帶或不符合 'Bearer <token>' 格式 → return 401 + { status: 'false', message: '請先登入' }
+// - Token 驗證：取出 authorization 中 Bearer 後的 token，在 try/catch 中以 jwt.verify 驗證（secret 用 process.env.JWT_SECRET）；
+//   驗證成功則將 decoded 掛到 req.user 並呼叫 next()；
+//   驗證失敗（拋出例外）→ catch 中 return 401 + { status: 'false', message: 'Token 無效或已過期' }
 
 /**
  * JWT 守門員：驗 Authorization header 的 Bearer token
@@ -54,23 +49,22 @@
  * @param {import('express').NextFunction} next
  */
 const verifyToken = function (req, res, next) {
-  // TODO: 實作
+  /* 作答區 */
 };
-
 ```
 
 
-### Step 5：測試
+### Step 5：測試你的程式碼
 
 ```bash
-# 起 server + Postman / Swagger UI 自我檢查
+# 起 server + Postman / Swagger UI （同學自行練習）
 npm start
 
-# 執行完整 Jest 測試（看通過/失敗）
+# 執行完整 Jest 測試（繳交作業前需整體通過）
 npm test       
 ```
 
-（這個部分的詳細可參照下方 **測試與驗證** 的說明）
+（這個部分的詳細可參照下方 **驗證與測試** 的說明）
 
 
 ---
@@ -129,37 +123,34 @@ node-js-week4-2026/
 
 ---
 
-## 測試與驗證
+## 驗證與測試
 
-### 使用 `npm start` 啟動 server，並手動進行測試：
+### 【驗證】
 
-   **方式一：Swagger UI**
-   * 開啟瀏覽器前往 `http://localhost:3000/docs`
-   * 每個 endpoint 點進去，點 **Try it out** 直接在頁面測試
+驗證部分提供給同學在作業進行中或撰寫完成後**自行練習**，透過實際發送 request、觀察回應結果，也能更直觀地了解各 API 的運作方式。
 
-   **方式二：Postman**
-   * 依照各 endpoint 的 method 與 URL 自行測試
-   * 建議測試項目：
-      * `POST /auth/register` body `{"email":"amy@gym.com","password":"1234"}` → **201**，`{ status: 'success', message: '註冊成功' }`
-      * `POST /auth/register` body `{"email":"leo@gym.com","password":"1234"}` → **400**，`email 已被註冊`
-      * `POST /auth/register` body `{"email":"only"}` → **400**，缺少必要欄位
-      * `POST /auth/login` body `{"email":"leo@gym.com","password":"1q2w3e4r"}` → **200**，回傳 token（fixtures 預填帳號）
-      * `POST /auth/login` body `{"email":"leo@gym.com","password":"wrong"}` → **401**，帳號或密碼錯誤
-      * `POST /auth/login` body `{"email":"ghost@gym.com","password":"1q2w3e4r"}` → **401**，訊息與密碼錯誤相同（避免帳號探測）
-      * `GET /auth/me` 不帶 header → **401**，`請先登入`
-      * `GET /auth/me` 帶 `Authorization: Bearer invalid_token` → **401**，Token 無效
-      * `GET /auth/me` 帶 `Authorization: Bearer <登入取得的 token>` → **200**，user 資料
-      * `GET /unknown` → **404**
+使用前需先執行 `npm start` 啟動本地 server。
+
+**方式一：Postman Collection**
+
+此專案附有 `week4_postman_collection.json`，匯入 Postman 後即可快速測試各 API。
+關於匯入流程、相關操作步驟，以及一些注意事項，可參考 [Week4 Postman Collection 教學]()
+
+**方式二：Swagger UI**
+
+開啟瀏覽器前往 `http://localhost:3000/docs`，可在各個 API 項目點擊 **Try it out** 直接在頁面測試。
 
 
-### 使用 `npm test` 來完整測試：
+### 【測試】
 
-測試結果說明：
+**作業繳交前必須通過**，執行 `npm test` 來確認各個測試項目。
+
+測試結果條列：
 
 - ✓ 表示測試通過
 - ✕ 表示測試失敗
 
-看到 `Tests: 16 passed, 16 total` 即代表全數通過。
+最終看到 `Tests: 16 passed, 16 total` 即代表全數通過。
 
 **測試項目（共 16 項）**
 
