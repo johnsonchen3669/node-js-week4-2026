@@ -79,7 +79,7 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = users.find((u) => u.email === email);
-    // const isMatch =
+    
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res
         .status(401)
@@ -109,6 +109,8 @@ router.post('/login', async (req, res) => {
 /* 作答區
 router.METHOD('PATH', middleware, (req, res) => { ... });
 */
-router.get('/me', verifyToken, (req, res) => {});
+router.get('/me', verifyToken, (req, res) => {
+  res.status(200).json({ status: 'success', user: req.user });
+});
 
 module.exports = router;
