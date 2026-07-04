@@ -26,12 +26,38 @@ const router = express.Router();
 // - 輸出：201 + { status: 'success', message: '註冊成功' }，或 400 + { status: 'false', message: '...' }
 // - 提示：
 //   1. email、password 缺少任何一個欄位，或 email 已存在（使用陣列方法檢查）→ return 400 跟對應輸出訊息
-//   2. 密碼加密可使用 bcrypt 的 genSalt 與 hash 
+//   2. 密碼加密可使用 bcrypt 的 genSalt 與 hash
 //   3. 加密完成後，將新使用者（包含 id、email、加密後 password）存進 users，並 return 201 跟對應輸出訊息
 // - 注意：handler 是 async function
 /* 作答區
 router.METHOD('PATH', async (req, res) => { ... });
 */
+router.post('/register', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res
+      .status(400)
+      .json({ status: 'false', message: '請填寫 email 與 password' });
+  }
+
+  const foundUser = users.find((u) => u.email === email);
+  if (foundUser) {
+    return res.status(400).json({ status: 'false', message: 'email 已被使用' });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const newUser = {
+    id: nextId++,
+    email,
+    password: hashedPassword,
+  };
+  users.push(newUser);
+  res.status(201).json({
+    status: 'success',
+    message: '註冊成功',
+    data: { id: newUser.id, email },
+  });
+});
 
 // ───────────────────────────────────────────────────────────
 // TODO 任務三：POST /login
@@ -49,7 +75,30 @@ router.METHOD('PATH', async (req, res) => { ... });
 /* 作答區
 router.METHOD('PATH', async (req, res) => { ... });
 */
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = users.find((u) => u.email === email);
+    // const isMatch =
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res
+        .status(401)
+        .json({ status: 'error', message: 'email 或密碼錯誤' });
+    }
 
+    const token = jwt.sign(
+      {
+        useId: user.id,
+        email: user.email,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' },
+    );
+    res.status(200).json({ status: 'success', token });
+  } catch (error) {
+    next(error);
+  }
+});
 // ───────────────────────────────────────────────────────────
 // TODO 任務四：GET /me（受保護）
 // ───────────────────────────────────────────────────────────
@@ -60,5 +109,6 @@ router.METHOD('PATH', async (req, res) => { ... });
 /* 作答區
 router.METHOD('PATH', middleware, (req, res) => { ... });
 */
+router.get('/me', verifyToken, (req, res) => {});
 
 module.exports = router;
